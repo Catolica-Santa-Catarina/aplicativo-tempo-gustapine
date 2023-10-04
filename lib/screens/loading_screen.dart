@@ -1,8 +1,10 @@
 import 'dart:developer';
-
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:tempo_template/services/location.dart';
 import 'package:http/http.dart' as http;
+import 'package:tempo_template/models/location.dart';
+import 'package:tempo_template/services/location_service.dart';
+import 'package:tempo_template/services/networking.dart';
 
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({Key? key}) : super(key: key);
@@ -12,32 +14,42 @@ class LoadingScreen extends StatefulWidget {
 }
 
 class _LoadingScreenState extends State<LoadingScreen> {
-  Future<void> getLocation() async {
-    var location = Location();
-    await location.getCurrentLocation();
+  Future<Location> getLocation() async {
+    LocationService locationService = LocationService();
+    var location = await locationService.getCurrentLocation();
 
-    log(
-      'Latitude: ${location.latitude}, Longitude: ${location.longitude}',
-    );
+    return location;
   }
 
-  void getData() async {
-    var url = Uri.parse(
-        'https://samples.openweathermap.org/data/2.5/weather?lat=35&lon=139&appid=b6907d289e10d714a6e88b30761fae22');
+  Future<void> getData() async {
+    var location = await getLocation();
+
+    var apiKey = '0478b9d06e6ba796669ae64fa2c03566';
+    var url =
+        'https://api.openweathermap.org/data/2.5/weather?lat=${location.latitude}&lon=${location.longitude}&units=metric&appid=$apiKey';
+
+    var networkHelper = NetworkHelper();
+    var networkData = await networkHelper.getData();
+
     http.Response response = await http.get(url);
     if (response.statusCode == 200) {
       // se a requisição foi feita com sucesso
       var data = response.body;
-      print(data); // imprima o resultado
+      log(data); // imprima o resultado
+
+      var cityName = networkData["name"];
+      var temparature = networkData["main"]["temp"];
+      var condition = networkData["weather"][0]["id"];
+
+      log("cidade: $cityName, temperatura: $temparature, condição: $condition");
     } else {
-      print(response.statusCode); // senão, imprima o código de erro
+      log(response.statusCode.toString()); // senão, imprima o código de erro
     }
   }
 
   @override
   void initState() {
     super.initState();
-    getLocation();
     getData();
   }
 
