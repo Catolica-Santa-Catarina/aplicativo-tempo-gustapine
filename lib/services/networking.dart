@@ -13,6 +13,7 @@ class NetworkHelper {
     http.Response response = await http.get(url);
 
     if (response.statusCode == 200) {
+      // se a requisição foi feita com sucesso
       String data = response.body;
 
       return jsonDecode(data);
